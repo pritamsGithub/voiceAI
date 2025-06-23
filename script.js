@@ -7,7 +7,7 @@ recognition.continuous = false;
 recognition.lang = 'en-US';
 recognition.interimResults = false;
 
-const OPENAI_API_KEY = 'YOUR_API_KEY';  // 🔐 Replace with your real API key
+const OPENAI_API_KEY = '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';  // 🔐 Replace with your real API key
 
 function addChat(role, text) {
   const div = document.createElement('div');
