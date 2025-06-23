@@ -1,4 +1,5 @@
 const chatbox = document.getElementById('chatbox');
+const voiceInput = document.getElementById('voiceInput');
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = new SpeechRecognition();
@@ -6,12 +7,7 @@ recognition.continuous = false;
 recognition.lang = 'en-US';
 recognition.interimResults = false;
 
-function botResponse(text) {
-  if (text.includes('hello')) return 'Hi there!';
-  if (text.includes('your name')) return 'I am VoiceBot!';
-  if (text.includes('bye')) return 'Goodbye!';
-  return "Sorry, I didn't understand that.";
-}
+const OPENAI_API_KEY = 'YOUR_API_KEY';  // 🔐 Replace with your real API key
 
 function addChat(role, text) {
   const div = document.createElement('div');
@@ -21,21 +17,41 @@ function addChat(role, text) {
   chatbox.scrollTop = chatbox.scrollHeight;
 }
 
-recognition.onresult = (event) => {
+async function chatWithGPT(userInput) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: userInput }]
+    })
+  });
+
+  const data = await response.json();
+  return data.choices[0].message.content.trim();
+}
+
+function startListening() {
+  recognition.start();
+}
+
+recognition.onresult = async (event) => {
   const userText = event.results[0][0].transcript;
+  voiceInput.value = userText;
   addChat('user', userText);
 
-  const response = botResponse(userText.toLowerCase());
-  addChat('bot', response);
-
-  recognition.start();
+  try {
+    const gptResponse = await chatWithGPT(userText);
+    addChat('bot', gptResponse);
+  } catch (err) {
+    addChat('bot', 'Error contacting ChatGPT.');
+    console.error(err);
+  }
 };
 
 recognition.onerror = (event) => {
   console.error('Speech recognition error:', event.error);
-  recognition.start();
-};
-
-window.onload = () => {
-  recognition.start();
 };
